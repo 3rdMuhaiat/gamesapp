@@ -1,47 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:gamesapp/detail.dart';
 import 'package:gamesapp/home.dart';
-import 'package:gamesapp/model/gameModel.dart';
+import 'package:gamesapp/model/model.dart';
+import 'package:gamesapp/service/categoryapi.dart';
 
-class CategoryPage extends StatelessWidget {
+class CategoryPage extends StatefulWidget {
   final String category;
+  const CategoryPage({Key? key, required this.category}) : super(key: key);
+  @override
+  _CategoryPageState createState() => _CategoryPageState();
+}
 
-  CategoryPage({required this.category});
+class _CategoryPageState extends State<CategoryPage> {
+  late List<GameApi> games = [];
+  late bool isLoading = true;
+  @override
+  void initState() {
+    super.initState();
+    _fetchGamesByCategory();
+  }
+
+  Future<void> _fetchGamesByCategory() async {
+    try {
+      List<GameApi> data =
+          await CategoryApi().fetchGamesByCategory(widget.category);
+      setState(() {
+        games = data;
+        isLoading = false;
+      });
+    } catch (error) {
+      print('Error fetching data from API: $error');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Center(
+      child: CircularProgressIndicator(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Model> games =
-        Model.gameList().where((game) => game.category == category).toList();
-
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
         title: Text(
-          category,
-          style: TextStyle(color: Colors.black),
+          widget.category,
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop();
+        backgroundColor: Colors.blue,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          _buildGameList(),
+          if (isLoading) _buildLoadingIndicator(),
+        ],
+      ),
+    );
+  }
+
+  _buildGameList() {
+    return ListView.builder(
+      itemCount: games.length,
+      itemBuilder: (context, index) {
+        GameApi apiGame = games[index];
+
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailPage(apigame: apiGame),
+              ),
+            );
           },
-        ),
-      ),
-      body: ListView.builder(
-        itemCount: games.length,
-        itemBuilder: (context, index) {
-          return trendinggames(
-            nama: games[index].name,
-            kategori: games[index].category,
-            warna: games[index].color,
-            harga: games[index].price,
-            rating: games[index].rating,
-            gambar: games[index].imageLogo,
-            gameModelDetail: games[index],
-          );
-        },
-      ),
+          child: trendinggames(
+              nama: apiGame.title,
+              kategori: apiGame.genre,
+              publisher: apiGame.publisher,
+              platform: apiGame.platform,
+              gambar: apiGame.thumbnail,
+              apigame: apiGame),
+        );
+      },
     );
   }
 }

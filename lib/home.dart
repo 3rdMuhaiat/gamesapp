@@ -1,23 +1,77 @@
-import 'package:dot_navigation_bar/dot_navigation_bar.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gamesapp/detail.dart';
-import 'package:gamesapp/model/gameModel.dart';
+import 'package:gamesapp/model/model.dart';
+import 'package:gamesapp/service/categoryapi.dart';
+import 'package:gamesapp/service/gameapi.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:gamesapp/categories.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int indexNow = 0;
+  int _currentPage = 0;
+  final PageController _pageController = PageController();
+  late Timer _timer;
+  late List<GameApi> apiGames = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+    _fetchApiData();
+  }
+
+  void _fetchApiData() async {
+    try {
+      List<GameApi> data = await GameReq().getData();
+      setState(() {
+        apiGames = data;
+      });
+    } catch (e) {
+      print('Error fetching data from API: $e');
+    }
+  }
+
+  void _fetchGamesByCategory(String category) async {
+    try {
+      List<GameApi> games = await CategoryApi().fetchGamesByCategory(category);
+      setState(() {
+        print(games);
+      });
+    } catch (error) {
+      print('Error: $error');
+    }
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_currentPage < 4) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Model> listGame = Model.gameList();
     return Scaffold(
       body: Stack(children: [
         SingleChildScrollView(
@@ -51,36 +105,36 @@ class _HomePageState extends State<HomePage> {
                       onTap: () {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) =>
-                                CategoryPage(category: "Adventure")));
+                                CategoryPage(category: "MMORPG")));
                       },
                       child: categories(
                         warna: Color.fromARGB(255, 189, 178, 255),
                         icon: LineIcons.alternateShield,
-                        nama: "Adventure",
+                        nama: "MMORPG",
                       ),
                     ),
                     InkWell(
                       onTap: () {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) =>
-                                CategoryPage(category: "Shooters")));
+                                CategoryPage(category: "Shooter")));
                       },
                       child: categories(
                         warna: Color.fromARGB(255, 156, 246, 255),
                         icon: LineIcons.crosshairs,
-                        nama: "Shooters",
+                        nama: "Shooter",
                       ),
                     ),
                     InkWell(
                       onTap: () {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) =>
-                                CategoryPage(category: "Simulation")));
+                                CategoryPage(category: "Space")));
                       },
                       child: categories(
                         warna: Color.fromARGB(255, 255, 174, 173),
                         icon: LineIcons.plane,
-                        nama: "Simulation",
+                        nama: "Space",
                       ),
                     ),
                     InkWell(
@@ -99,24 +153,24 @@ class _HomePageState extends State<HomePage> {
                       onTap: () {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) =>
-                                CategoryPage(category: "Sport")));
+                                CategoryPage(category: "Sports")));
                       },
                       child: categories(
                         warna: Color.fromARGB(255, 253, 255, 182),
                         icon: LineIcons.footballBall,
-                        nama: "Sport",
+                        nama: "Sports",
                       ),
                     ),
                     InkWell(
                       onTap: () {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) =>
-                                CategoryPage(category: "Race")));
+                                CategoryPage(category: "Racing")));
                       },
                       child: categories(
                         warna: Color.fromARGB(255, 253, 198, 255),
                         icon: LineIcons.flagCheckered,
-                        nama: "Race",
+                        nama: "Racing",
                       ),
                     ),
                   ],
@@ -134,59 +188,24 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 height: 15,
               ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: listGame.length,
-                itemBuilder: (context, index) => trendinggames(
-                  nama: listGame[index].name,
-                  kategori: listGame[index].category,
-                  warna: listGame[index].color,
-                  harga: listGame[index].price,
-                  rating: listGame[index].rating,
-                  gambar: listGame[index].imageLogo,
-                  gameModelDetail: listGame[index],
-                ),
-              ),
-              // trendinggames(),
-              // trendinggames(),
-              // trendinggames(),
-              // trendinggames(),
-              // trendinggames(),
-              // trendinggames(),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: DotNavigationBar(
-            onTap: (p0) {
-              setState(() {
-                indexNow = p0;
-              });
-            },
-            currentIndex: indexNow,
-            items: [
-              DotNavigationBarItem(
-                icon: Icon(LineIcons.list),
-                selectedColor: Color.fromARGB(255, 160, 196, 255),
-                unselectedColor: Colors.grey,
-              ),
-              DotNavigationBarItem(
-                icon: Icon(LineIcons.home),
-                selectedColor: Color.fromARGB(255, 160, 196, 255),
-                unselectedColor: Colors.grey,
-              ),
-              DotNavigationBarItem(
-                icon: Icon(LineIcons.user),
-                selectedColor: Color.fromARGB(255, 160, 196, 255),
-                unselectedColor: Colors.grey,
-              ),
-            ],
-            boxShadow: [
-              BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 5),
+              SizedBox(
+                height: 1000,
+                child: apiGames.isEmpty
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        itemCount: 20,
+                        itemBuilder: (context, index) {
+                          GameApi apiGame = apiGames[index];
+                          return trendinggames(
+                              nama: apiGame.title,
+                              kategori: apiGame.genre,
+                              publisher: apiGame.publisher,
+                              platform: apiGame.platform,
+                              gambar: apiGame.thumbnail,
+                              apigame: apiGame);
+                        }),
+              )
             ],
           ),
         ),
@@ -198,21 +217,19 @@ class _HomePageState extends State<HomePage> {
 class trendinggames extends StatelessWidget {
   final String nama;
   final String kategori;
-  final Color warna;
-  final String harga;
-  final String rating;
+  final String publisher;
+  final String platform;
   final String gambar;
-  final Model gameModelDetail;
+  final GameApi apigame;
 
   const trendinggames({
     required this.nama,
     required this.kategori,
-    required this.warna,
-    required this.harga,
-    required this.rating,
+    required this.publisher,
+    required this.platform,
     required this.gambar,
     super.key,
-    required this.gameModelDetail,
+    required this.apigame,
   });
 
   @override
@@ -222,7 +239,7 @@ class trendinggames extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => DetailPage(gameModel: gameModelDetail),
+              builder: (context) => DetailPage(apigame: apigame),
             ));
       },
       child: Padding(
@@ -239,10 +256,9 @@ class trendinggames extends StatelessWidget {
                     width: 90,
                     decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: AssetImage(gambar), fit: BoxFit.cover),
+                            image: NetworkImage(gambar), fit: BoxFit.cover),
                         borderRadius: BorderRadius.circular(15)),
                   ),
-                  //name, categories, price
                   Padding(
                     padding: const EdgeInsets.only(left: 12),
                     child: Column(
@@ -265,11 +281,12 @@ class trendinggames extends StatelessWidget {
                               kategori,
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            backgroundColor: warna,
+                            backgroundColor:
+                                const Color.fromARGB(255, 156, 246, 255),
                           ),
                         ),
                         Text(
-                          harga,
+                          publisher,
                           style: TextStyle(
                               fontSize: 17, fontWeight: FontWeight.normal),
                         ),
@@ -281,11 +298,6 @@ class trendinggames extends StatelessWidget {
                     children: [
                       SizedBox(
                         height: 4,
-                      ),
-                      Text(
-                        "⭐ " + rating,
-                        style: TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.normal),
                       ),
                     ],
                   ),
